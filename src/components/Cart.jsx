@@ -22,10 +22,13 @@ function Cart() {
       <div className="cart-list">
         {cartItems.map((item) => (
           <article className="panel cart-row" key={item._id}>
-            <div>
+            <div className="cart-item-info">
+              <img className="cart-item-image" src={item.image} alt={item.name} />
+              <div>
               <h3>{item.name}</h3>
               <p className="product-description">{item.description}</p>
               <p className="product-price">Rs. {item.price}</p>
+              </div>
             </div>
             <div className="cart-controls">
               <input
@@ -45,7 +48,7 @@ function Cart() {
       </div>
 
       <aside className="panel order-summary">
-        <p className="eyebrow">Summary</p>
+        <p className="eyebrow">Cart Summary</p>
         <h2>Order summary</h2>
         <div className="summary-row">
           <span>Items</span>

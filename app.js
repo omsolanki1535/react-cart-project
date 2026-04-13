@@ -6,6 +6,9 @@ require("dotenv").config()
 const studentsRoute = require("./routes/students")
 const coursesRoute = require("./routes/courses")
 const enrollmentsRoute = require("./routes/enrollments")
+const productsRoute = require("./routes/products")
+const uploadsRoute = require("./routes/uploads")
+const paymentsRoute = require("./routes/payments")
 
 const app = express()
 const PORT = process.env.PORT || 5000
@@ -20,9 +23,14 @@ app.get("/api/health", (req, res) => {
 app.use("/api/students", studentsRoute)
 app.use("/api/courses", coursesRoute)
 app.use("/api/enrollments", enrollmentsRoute)
+app.use("/api/products", productsRoute)
+app.use("/api/uploads", uploadsRoute)
+app.use("/api/payments", paymentsRoute)
 
 const distPath = path.join(__dirname, "dist")
+const uploadsPath = path.join(__dirname, "uploads")
 app.use(express.static(distPath))
+app.use("/uploads", express.static(uploadsPath))
 
 app.get(/^(?!\/api\/).*/, (req, res, next) => {
   res.sendFile(path.join(distPath, "index.html"), (error) => {

@@ -3,6 +3,7 @@ const express = require("express")
 const Course = require("../models/Course")
 const Student = require("../models/Student")
 const Enrollment = require("../models/Enrollment")
+const { requireAuth, signStudentToken } = require("../middleware/auth")
 
 const router = express.Router()
 
@@ -102,13 +103,19 @@ async function verifyPassword(password, storedHash) {
   return crypto.timingSafeEqual(Buffer.from(originalKey, "hex"), Buffer.from(derivedKey, "hex"))
 }
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const students = await Student.find().sort({ createdAt: -1 })
     res.json(students.map(sanitizeStudent))
   } catch (error) {
     res.status(500).json({ message: "Unable to load students." })
   }
+})
+
+router.get("/me", requireAuth, async (req, res) => {
+  res.json({
+    student: sanitizeStudent(req.auth.student)
+  })
 })
 
 router.post("/register", async (req, res) => {
@@ -139,7 +146,8 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({
       message: "Registration successful.",
-      student: sanitizeStudent(student)
+      student: sanitizeStudent(student),
+      token: signStudentToken(student)
     })
   } catch (error) {
     res.status(500).json({ message: "Unable to register student." })
@@ -163,15 +171,20 @@ router.post("/login", async (req, res) => {
 
     res.json({
       message: "Login successful.",
-      student: sanitizeStudent(student)
+      student: sanitizeStudent(student),
+      token: signStudentToken(student)
     })
   } catch (error) {
     res.status(500).json({ message: "Unable to log in right now." })
   }
 })
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
+    if (req.auth.studentId !== req.params.id) {
+      return res.status(403).json({ message: "You can only update your own student profile." })
+    }
+
     const updates = {
       fullName: String(req.body.fullName || "").trim(),
       department: String(req.body.department || "").trim(),
@@ -205,15 +218,20 @@ router.put("/:id", async (req, res) => {
 
     res.json({
       message: "Student updated successfully.",
-      student: sanitizeStudent(student)
+      student: sanitizeStudent(student),
+      token: signStudentToken(student)
     })
   } catch (error) {
     res.status(500).json({ message: "Unable to update student." })
   }
 })
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
+    if (req.auth.studentId !== req.params.id) {
+      return res.status(403).json({ message: "You can only delete your own student profile." })
+    }
+
     const enrollments = await Enrollment.find({ student: req.params.id })
     const deletedStudent = await Student.findByIdAndDelete(req.params.id)
 
